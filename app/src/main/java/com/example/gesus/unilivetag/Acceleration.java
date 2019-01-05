@@ -27,7 +27,7 @@ import android.os.Vibrator;
 import android.widget.Toast;
 
 public class Acceleration extends Activity implements SensorEventListener, View.OnClickListener{
-
+//   TODO: kommentare einfügen auf deutsch!! erst wieder sensor abfragen wenn zu ende? oder mit case arbeiten?
     Button btnBack;
     TextView txtAccX, txtAccY, txtAccZ, txtOutput;
     private SensorManager mSensorManager;
@@ -39,7 +39,7 @@ public class Acceleration extends Activity implements SensorEventListener, View.
     private boolean isFlashOn;
     private boolean hasFlash;
     Camera.Parameters p;
-    MediaPlayer mp;
+    MediaPlayer sound;
     public static Camera cam = null;
 
 
@@ -98,19 +98,24 @@ public class Acceleration extends Activity implements SensorEventListener, View.
         accZ = event.values[2];
         txtAccZ.setText("Orientation Z:"+ Float.toString(accZ));
 
+//        MediaPlayer sound= MediaPlayer.create(Acceleration.this,R.raw.sound);
         //https://stackoverflow.com/questions/13950338/how-to-make-an-android-device-vibrate
         Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         String OutputString = "";
         if (accZ>=9 && accZ<=11){
             v.cancel();
-
+//            sound.stop();
             OutputString = "obenoben";
             flashLightOn(OutputString);
+            soundOn(OutputString);
+
             v.vibrate(500);
         } else if (accY>=9 && accY<=11){
             v.cancel();
             OutputString = "vorne";
             flashLightOn(OutputString);
+            soundOn(OutputString);
+
             // Start without a delay
             // Vibrate for 100 milliseconds
             // Sleep for 1000 milliseconds
@@ -123,26 +128,35 @@ public class Acceleration extends Activity implements SensorEventListener, View.
         } else if (accZ>=-11 && accZ<=-8) {
             v.cancel();
             OutputString = "unten";
+//            sound.start();
             flashLightOn(OutputString);
+            soundOn(OutputString);
+
         } else if (accY>=-11 && accY<=-8) {
             v.cancel();
             OutputString = "hinten";
             flashLightOn(OutputString);
+            soundOn(OutputString);
+
             long[] pattern = {0, 100, 1000};
             v.vibrate(pattern, -1);
         } else if (accX>=-11 && accX<=-8) {
             v.cancel();
             OutputString = "rechts";
             flashLightOn(OutputString);
+            soundOn(OutputString);
+
         } else if (accX>=9 && accX<=11) {
             v.cancel();
             OutputString = "links";
+            soundOn(OutputString);
             flashLightOn(OutputString);
 
 
         } else{
             v.cancel();
             OutputString="else";
+            soundOn(OutputString);
             flashLightOn(OutputString);
         }
         txtOutput.setText(OutputString);
@@ -153,6 +167,28 @@ public class Acceleration extends Activity implements SensorEventListener, View.
         //Do nothing.
     }
 
+
+    public void soundOn (String s){
+        sound= MediaPlayer.create(Acceleration.this,R.raw.tap);
+        if (s == "unten"){
+            sound.start();
+            sound.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    mp.reset();
+                    mp.release();
+                }
+            });
+        }else{
+            if(sound!=null) {
+                if(sound.isPlaying())
+                    sound.stop();
+                sound.reset();
+                sound.release();
+                sound=null;
+            }
+        }
+    }
     //https://stackoverflow.com/questions/6068803/how-to-turn-on-front-flash-light-programmatically-in-android
     public void flashLightOn(String s) {
         String OutputString = "";

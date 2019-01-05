@@ -8,6 +8,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorListener;
 import android.hardware.SensorManager;
+import android.media.MediaPlayer;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -26,6 +27,7 @@ public class Gyroscope extends Activity implements SensorEventListener, View.OnC
 
 
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -40,6 +42,10 @@ public class Gyroscope extends Activity implements SensorEventListener, View.OnC
         txtGyroY = (TextView) findViewById(R.id.txtGyroY);
         txtGyroZ = (TextView) findViewById(R.id.txtGyroZ);
         txtOutput = (TextView) findViewById(R.id.txtOutput);
+
+        MediaPlayer sound = MediaPlayer.create(Gyroscope.this,R.raw.sound);
+        sound.start();
+
     }
 
     //Back-Button
@@ -69,6 +75,8 @@ public class Gyroscope extends Activity implements SensorEventListener, View.OnC
         //unregister the sensor listener
         mSensorManager.unregisterListener(this);
         super.onStop();
+//        sound.stop();
+//        sound.release();
     }
 
     @Override
