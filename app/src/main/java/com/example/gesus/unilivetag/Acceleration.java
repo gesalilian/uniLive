@@ -27,7 +27,7 @@ import android.os.Vibrator;
 import android.widget.Toast;
 
 public class Acceleration extends Activity implements SensorEventListener, View.OnClickListener{
-//   TODO: kommentare einfügen auf deutsch!! erst wieder sensor abfragen wenn zu ende? oder mit case arbeiten?
+//   TODO: kommentare einfügen auf deutsch!!
     Button btnBack;
     TextView txtAccX, txtAccY, txtAccZ, txtOutput;
     private SensorManager mSensorManager;
@@ -35,13 +35,8 @@ public class Acceleration extends Activity implements SensorEventListener, View.
     float accX = 0;
     float accY = 0;
     float accZ = 0;
-    //private Camera camera;
-    private boolean isFlashOn;
-    private boolean hasFlash;
     Camera.Parameters p;
     MediaPlayer sound;
-    public static Camera cam = null;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +54,135 @@ public class Acceleration extends Activity implements SensorEventListener, View.
         txtOutput = (TextView) findViewById(R.id.txtOutput);
     }
 
+
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+
+        //die Werte des Beschleunigungssensors
+        accX = event.values[0];
+        txtAccX.setText("Orientation X:"+ Float.toString(accX));
+        accY = event.values[1];
+        txtAccY.setText("Orientation Y:"+ Float.toString(accY));
+        accZ = event.values[2];
+        txtAccZ.setText("Orientation Z:"+ Float.toString(accZ));
+
+        //https://stackoverflow.com/questions/13950338/how-to-make-an-android-device-vibrate
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        String OutputString = "else";
+        String flashLightOff = "flashLightOff";
+        String flashLightOn = "flashLightOn";
+        String soundOff = "soundOff";
+        String soundOn = "soundOn";
+
+        if (accZ>=9 && accZ<=11){
+            v.cancel();
+            OutputString = "oben";
+            sound(soundOff);
+            flashLight(flashLightOff);
+
+        } else if (accY>=9 && accY<=11){
+            v.cancel();
+            OutputString = "vorne";
+            sound(soundOff);
+            flashLight(flashLightOn);
+
+        } else if (accZ>=-11 && accZ<=-8) {
+            v.cancel();
+            OutputString = "unten";
+            flashLight(flashLightOff);
+            sound(soundOn);
+
+        } else if (accY>=-11 && accY<=-8) {
+            v.cancel();
+            OutputString = "hinten";
+            sound(soundOff);
+            flashLight(flashLightOff);
+
+        } else if (accX>=-11 && accX<=-8) {
+            v.cancel();
+            OutputString = "rechts";
+            flashLight(flashLightOff);
+            sound(soundOff);
+
+        } else if (accX>=9 && accX<=11) {
+            v.cancel();
+            OutputString = "links";
+            sound(soundOff);
+            flashLight(flashLightOff);
+            v.vibrate(100);
+
+
+        } else{
+            v.cancel();
+            sound(soundOff);
+            flashLight(flashLightOff);
+        }
+        txtOutput.setText(OutputString);
+    }
+
+
+
+    //Funktion, die den sound an und aus macht
+    public void sound (String s){
+        sound= MediaPlayer.create(Acceleration.this,R.raw.tap);
+        if (s == "soundOn"){
+            sound.start();
+            sound.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    mp.reset();
+                    mp.release();
+                }
+            });
+        }else{
+            if(sound!=null) {
+                if(sound.isPlaying())
+                    sound.stop();
+                sound.reset();
+                sound.release();
+                sound=null;
+            }
+        }
+    }
+
+    //Funktion, die das Kameralicht an und aus macht
+    //https://stackoverflow.com/questions/6068803/how-to-turn-on-front-flash-light-programmatically-in-android
+    public void flashLight(String s) {
+        if (s == "flashLightOn") {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                CameraManager camManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+                String cameraId = null; // Usually back camera is at 0 position.
+                try {
+                    cameraId = camManager.getCameraIdList()[0];
+                    camManager.setTorchMode(cameraId, true);   //Turn ON
+                } catch (CameraAccessException e) {
+                    Toast.makeText(getBaseContext(), "Exception flashLightOn-links()",
+                            Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                CameraManager camManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+                String cameraId = null; // Usually back camera is at 0 position.
+                try {
+                    cameraId = camManager.getCameraIdList()[0];
+                    camManager.setTorchMode(cameraId, false);   //Turn OFF
+                } catch (CameraAccessException e) {
+                    Toast.makeText(getBaseContext(), "Exception flashLightOn-links()",
+                            Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+
+
+    //
+    //ab hier muss nichts mehr geändert werden
+    //
     @Override
     public void onClick(View v) {
         Intent intent = new Intent(this, Start.class);
@@ -88,138 +212,8 @@ public class Acceleration extends Activity implements SensorEventListener, View.
     }
 
     @Override
-    public void onSensorChanged(SensorEvent event) {
-
-        //die Werte des Beschleunigungssensors
-        accX = event.values[0];
-        txtAccX.setText("Orientation X:"+ Float.toString(accX));
-        accY = event.values[1];
-        txtAccY.setText("Orientation Y:"+ Float.toString(accY));
-        accZ = event.values[2];
-        txtAccZ.setText("Orientation Z:"+ Float.toString(accZ));
-
-//        MediaPlayer sound= MediaPlayer.create(Acceleration.this,R.raw.sound);
-        //https://stackoverflow.com/questions/13950338/how-to-make-an-android-device-vibrate
-        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-        String OutputString = "";
-        if (accZ>=9 && accZ<=11){
-            v.cancel();
-//            sound.stop();
-            OutputString = "obenoben";
-            flashLightOn(OutputString);
-            soundOn(OutputString);
-
-            v.vibrate(500);
-        } else if (accY>=9 && accY<=11){
-            v.cancel();
-            OutputString = "vorne";
-            flashLightOn(OutputString);
-            soundOn(OutputString);
-
-            // Start without a delay
-            // Vibrate for 100 milliseconds
-            // Sleep for 1000 milliseconds
-            long[] pattern = {0, 100, 10000};
-
-            // The '0' here means to repeat indefinitely
-            // '0' is actually the index at which the pattern keeps repeating from (the start)
-            // To repeat the pattern from any other point, you could increase the index, e.g. '1'
-            v.vibrate(pattern, 0);
-        } else if (accZ>=-11 && accZ<=-8) {
-            v.cancel();
-            OutputString = "unten";
-//            sound.start();
-            flashLightOn(OutputString);
-            soundOn(OutputString);
-
-        } else if (accY>=-11 && accY<=-8) {
-            v.cancel();
-            OutputString = "hinten";
-            flashLightOn(OutputString);
-            soundOn(OutputString);
-
-            long[] pattern = {0, 100, 1000};
-            v.vibrate(pattern, -1);
-        } else if (accX>=-11 && accX<=-8) {
-            v.cancel();
-            OutputString = "rechts";
-            flashLightOn(OutputString);
-            soundOn(OutputString);
-
-        } else if (accX>=9 && accX<=11) {
-            v.cancel();
-            OutputString = "links";
-            soundOn(OutputString);
-            flashLightOn(OutputString);
-
-
-        } else{
-            v.cancel();
-            OutputString="else";
-            soundOn(OutputString);
-            flashLightOn(OutputString);
-        }
-        txtOutput.setText(OutputString);
-    }
-
-    @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         //Do nothing.
-    }
-
-
-    public void soundOn (String s){
-        sound= MediaPlayer.create(Acceleration.this,R.raw.tap);
-        if (s == "unten"){
-            sound.start();
-            sound.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mp) {
-                    mp.reset();
-                    mp.release();
-                }
-            });
-        }else{
-            if(sound!=null) {
-                if(sound.isPlaying())
-                    sound.stop();
-                sound.reset();
-                sound.release();
-                sound=null;
-            }
-        }
-    }
-    //https://stackoverflow.com/questions/6068803/how-to-turn-on-front-flash-light-programmatically-in-android
-    public void flashLightOn(String s) {
-        String OutputString = "";
-        if (s == "links") {
-            OutputString = "turnOnFlash";
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                CameraManager camManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-                String cameraId = null; // Usually back camera is at 0 position.
-                try {
-                    cameraId = camManager.getCameraIdList()[0];
-                    camManager.setTorchMode(cameraId, true);   //Turn ON
-                } catch (CameraAccessException e) {
-                    Toast.makeText(getBaseContext(), "Exception flashLightOn-links()",
-                            Toast.LENGTH_SHORT).show();
-                    e.printStackTrace();
-                }
-            }
-        } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                CameraManager camManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-                String cameraId = null; // Usually back camera is at 0 position.
-                try {
-                    cameraId = camManager.getCameraIdList()[0];
-                    camManager.setTorchMode(cameraId, false);   //Turn OFF
-                } catch (CameraAccessException e) {
-                    Toast.makeText(getBaseContext(), "Exception flashLightOn-links()",
-                            Toast.LENGTH_SHORT).show();
-                    e.printStackTrace();
-                }
-            }
-        }
     }
 
 
