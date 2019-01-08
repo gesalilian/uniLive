@@ -26,6 +26,14 @@ import android.widget.TextView;
 import android.os.Vibrator;
 import android.widget.Toast;
 
+import be.tarsos.dsp.AudioDispatcher;
+import be.tarsos.dsp.AudioEvent;
+import be.tarsos.dsp.AudioProcessor;
+import be.tarsos.dsp.io.android.AudioDispatcherFactory;
+import be.tarsos.dsp.pitch.PitchDetectionHandler;
+import be.tarsos.dsp.pitch.PitchDetectionResult;
+import be.tarsos.dsp.pitch.PitchProcessor;
+
 public class Acceleration extends Activity implements SensorEventListener, View.OnClickListener{
 //   TODO: kommentare einfügen auf deutsch!!
     Button btnBack;
@@ -37,6 +45,10 @@ public class Acceleration extends Activity implements SensorEventListener, View.
     float accZ = 0;
     Camera.Parameters p;
     MediaPlayer sound;
+    AudioDispatcher dispatcher;
+    AudioProcessor audioP;
+    PitchDetectionHandler pdh;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,13 +71,10 @@ public class Acceleration extends Activity implements SensorEventListener, View.
     @Override
     public void onSensorChanged(SensorEvent event) {
 
-        //die Werte des Beschleunigungssensors
+        //die Werte des Beschleunigungssensors, um die Rotation des Handys zu ermitteln
         accX = event.values[0];
-        txtAccX.setText("Orientation X:"+ Float.toString(accX));
         accY = event.values[1];
-        txtAccY.setText("Orientation Y:"+ Float.toString(accY));
         accZ = event.values[2];
-        txtAccZ.setText("Orientation Z:"+ Float.toString(accZ));
 
         //https://stackoverflow.com/questions/13950338/how-to-make-an-android-device-vibrate
         Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
@@ -74,7 +83,9 @@ public class Acceleration extends Activity implements SensorEventListener, View.
         String flashLightOn = "flashLightOn";
         String soundOff = "soundOff";
         String soundOn = "soundOn";
+        frequence();
 
+        //Folgende Werte geben an in welche Richtung das Display zeigt (mithilfe der ermittelten Werte des Beschleunigungssensors
         if (accZ>=9 && accZ<=11){
             v.cancel();
             OutputString = "oben";
@@ -117,14 +128,16 @@ public class Acceleration extends Activity implements SensorEventListener, View.
             v.cancel();
             sound(soundOff);
             flashLight(flashLightOff);
+            frequence();
         }
         txtOutput.setText(OutputString);
     }
 
 
 
-    //Funktion, die den sound an und aus macht
+    //Schaltet den Sound an und aus
     public void sound (String s){
+        txtAccX.setText("Sound: " + s);
         sound= MediaPlayer.create(Acceleration.this,R.raw.tap);
         if (s == "soundOn"){
             sound.start();
@@ -146,9 +159,10 @@ public class Acceleration extends Activity implements SensorEventListener, View.
         }
     }
 
-    //Funktion, die das Kameralicht an und aus macht
+    //Schaltet das Kameralicht an und aus
     //https://stackoverflow.com/questions/6068803/how-to-turn-on-front-flash-light-programmatically-in-android
     public void flashLight(String s) {
+        txtAccY.setText("Licht: "+ s);
         if (s == "flashLightOn") {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 CameraManager camManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
@@ -178,11 +192,40 @@ public class Acceleration extends Activity implements SensorEventListener, View.
         }
     }
 
+    //Zeigt die Frquenz der Töne an, die das Handy wahrnimmt
+    public void frequence(){
+        dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(22050, 1024, 0);
+
+        pdh = new PitchDetectionHandler() {
+            @Override
+            public void handlePitch(PitchDetectionResult result, AudioEvent e) {
+                final float pitchInHz = result.getPitch();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        txtAccZ.setText("Frequenz in Hz: " + Float.toString(pitchInHz));
+                    }
+                });
+            }
+        };
+        audioP = new PitchProcessor(PitchProcessor.PitchEstimationAlgorithm.FFT_YIN, 22050, 1024, pdh);
+        dispatcher.addAudioProcessor(audioP);
+        new Thread(dispatcher, "Audio Dispatcher").start();
+
+    }
+
+
+
+
+
+
 
 
     //
     //ab hier muss nichts mehr geändert werden
     //
+
+
     @Override
     public void onClick(View v) {
         Intent intent = new Intent(this, Start.class);

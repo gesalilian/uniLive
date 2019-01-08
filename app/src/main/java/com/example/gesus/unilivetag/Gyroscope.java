@@ -1,110 +1,271 @@
 package com.example.gesus.unilivetag;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.hardware.Camera;
+import android.hardware.Camera.Parameters;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
-import android.hardware.SensorListener;
 import android.hardware.SensorManager;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraManager;
 import android.media.MediaPlayer;
-import android.media.MediaRecorder;
-import android.os.Handler;
+import android.os.Build;
+import android.os.VibrationEffect;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-//import android.media.AudioRecord;
-//import android.media.MediaRecorder;
-//import be.tarsos.dsp.AudioDispatcher;
-//import be.tarsos.dsp.io.PipedAudioStream;
-//import be.tarsos.dsp.io.TarsosDSPAudioFormat;
-//import be.tarsos.dsp.io.TarsosDSPAudioInputStream;
-
-import java.io.IOException;
+import android.os.Vibrator;
+import android.widget.Toast;
 
 import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.AudioEvent;
 import be.tarsos.dsp.AudioProcessor;
 import be.tarsos.dsp.io.android.AudioDispatcherFactory;
-import be.tarsos.dsp.onsets.OnsetHandler;
-import be.tarsos.dsp.onsets.PercussionOnsetDetector;
 import be.tarsos.dsp.pitch.PitchDetectionHandler;
 import be.tarsos.dsp.pitch.PitchDetectionResult;
 import be.tarsos.dsp.pitch.PitchProcessor;
 
-import static android.content.ContentValues.TAG;
-
 public class Gyroscope extends Activity implements SensorEventListener, View.OnClickListener{
 
     Button btnBack;
-    TextView txtGyroX, txtGyroY, txtGyroZ, txtOutput;
+    TextView txtAccX, txtAccY, txtAccZ, txtOutput;
     private SensorManager mSensorManager;
     private Sensor mSensor;
-    float gyroX = 0;
-    float gyroY = 0;
-    float gyroZ = 0;
-    private Handler handler;
-    private Runnable runnable;
-    MediaRecorder myAudioRecorder;
+    float accX = 0;
+    float accY = 0;
+    float accZ = 0;
+    Camera.Parameters p;
+    MediaPlayer sound;
     AudioDispatcher dispatcher;
-    AudioDispatcher mDispatcher;
-    AudioProcessor p;
+    AudioProcessor audioP;
     PitchDetectionHandler pdh;
-    PercussionOnsetDetector mPercussionDetector;
-
-
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_gyroscope);
+        setContentView(R.layout.activity_acceleration);
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
         btnBack = (Button) findViewById(R.id.btnBack);
         btnBack.setOnClickListener(this);
-        txtGyroX = (TextView) findViewById(R.id.txtGyroX);
-        txtGyroY = (TextView) findViewById(R.id.txtGyroY);
-        txtGyroZ = (TextView) findViewById(R.id.txtGyroZ);
+        txtAccX = (TextView) findViewById(R.id.txtAccX);
+        txtAccY = (TextView) findViewById(R.id.txtAccY);
+        txtAccZ = (TextView) findViewById(R.id.txtAccZ);
         txtOutput = (TextView) findViewById(R.id.txtOutput);
+    }
 
-//        MediaPlayer sound = MediaPlayer.create(Gyroscope.this,R.raw.sound);
-//        sound.start();
-//        myAudioRecorder = new MediaRecorder();
-//        myAudioRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-//        myAudioRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-//        myAudioRecorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB);
-//        myAudioRecorder.setOutputFile(outputFile);
-//        try {
-//            myAudioRecorder.prepare();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        handler = new Handler();
-//        handler.postDelayed(runnable, 100);
+
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+
+        //die Werte des Beschleunigungssensors, um die Rotation des Handys zu ermitteln
+        accX = event.values[0];
+        accY = event.values[1];
+        accZ = event.values[2];
+
+        //https://stackoverflow.com/questions/13950338/how-to-make-an-android-device-vibrate
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        String OutputString = "else";
+        String flashLightOff = "flashLightOff";
+        String flashLightOn = "flashLightOn";
+        String soundOff = "soundOff";
+        String soundOn = "soundOn";
+        frequence();
+
+        //Folgende Werte geben an in welche Richtung das Display zeigt (mithilfe der ermittelten Werte des Beschleunigungssensors
+        if (accZ>=9 && accZ<=11){
+            v.cancel();
+            OutputString = "oben";
+            sound(soundOff);
+            flashLight(flashLightOff);
+
+        } else if (accY>=9 && accY<=11){
+            v.cancel();
+            OutputString = "vorne";
+            sound(soundOff);
+            flashLight(flashLightOn);
+
+        } else if (accZ>=-11 && accZ<=-8) {
+            v.cancel();
+            OutputString = "unten";
+            flashLight(flashLightOff);
+            sound(soundOn);
+
+        } else if (accY>=-11 && accY<=-8) {
+            v.cancel();
+            OutputString = "hinten";
+            sound(soundOff);
+            flashLight(flashLightOff);
+
+        } else if (accX>=-11 && accX<=-8) {
+            v.cancel();
+            OutputString = "rechts";
+            flashLight(flashLightOff);
+            sound(soundOff);
+
+        } else if (accX>=9 && accX<=11) {
+            v.cancel();
+            OutputString = "links";
+            sound(soundOff);
+            flashLight(flashLightOff);
+            v.vibrate(100);
+
+
+        } else{
+            v.cancel();
+            sound(soundOff);
+            flashLight(flashLightOff);
+            frequence();
+        }
+        txtOutput.setText(OutputString);
+    }
+
+
+
+    //Schaltet den Sound an und aus
+    public void sound (String s){
+        txtAccX.setText("Sound: " + s);
+        sound= MediaPlayer.create(Gyroscope.this,R.raw.tap);
+        if (s == "soundOn"){
+            sound.start();
+            sound.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    mp.reset();
+                    mp.release();
+                }
+            });
+        }else{
+            if(sound!=null) {
+                if(sound.isPlaying())
+                    sound.stop();
+                sound.reset();
+                sound.release();
+                sound=null;
+            }
+        }
+    }
+
+    //Schaltet das Kameralicht an und aus
+    //https://stackoverflow.com/questions/6068803/how-to-turn-on-front-flash-light-programmatically-in-android
+    public void flashLight(String s) {
+        txtAccY.setText("Licht: "+ s);
+        if (s == "flashLightOn") {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                CameraManager camManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+                String cameraId = null; // Usually back camera is at 0 position.
+                try {
+                    cameraId = camManager.getCameraIdList()[0];
+                    camManager.setTorchMode(cameraId, true);   //Turn ON
+                } catch (CameraAccessException e) {
+                    Toast.makeText(getBaseContext(), "Exception flashLightOn-links()",
+                            Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                CameraManager camManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+                String cameraId = null; // Usually back camera is at 0 position.
+                try {
+                    cameraId = camManager.getCameraIdList()[0];
+                    camManager.setTorchMode(cameraId, false);   //Turn OFF
+                } catch (CameraAccessException e) {
+                    Toast.makeText(getBaseContext(), "Exception flashLightOn-links()",
+                            Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    //Zeigt die Frquenz der Töne an, die das Handy wahrnimmt
+    public void frequence(){
+        dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(22050, 1024, 0);
+
+        pdh = new PitchDetectionHandler() {
+            @Override
+            public void handlePitch(PitchDetectionResult result, AudioEvent e) {
+                final float pitchInHz = result.getPitch();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        txtAccZ.setText("Frequenz in Hz: " + Float.toString(pitchInHz));
+                    }
+                });
+            }
+        };
+        audioP = new PitchProcessor(PitchProcessor.PitchEstimationAlgorithm.FFT_YIN, 22050, 1024, pdh);
+        dispatcher.addAudioProcessor(audioP);
+        new Thread(dispatcher, "Audio Dispatcher").start();
+
+    }
+
+
+
+
+
+
+
+
+    //
+    //ab hier muss nichts mehr geändert werden
+    //
+
+
+    @Override
+    public void onClick(View v) {
+        Intent intent = new Intent(this, Start.class);
+        startActivity(intent);
+        this.finish();
+    }
+
+    //http://www.41post.com/3745/programming/android-acessing-the-gyroscope-sensor-for-simple-applications
+    //when this Activity starts
+    @Override
+    protected void onResume()
+    {
+        super.onResume();
+        /*register the sensor listener to listen to the gyroscope sensor, use the
+        callbacks defined in this class, and gather the sensor information as quick
+        as possible*/
+        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    //When this Activity isn't visible anymore
+    @Override
+    protected void onStop()
+    {
+        //unregister the sensor listener
+        mSensorManager.unregisterListener(this);
+        super.onStop();
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        //Do nothing.
+    }
+
+
+}
+
+
+// Klatscherkennung
 //
-//        runnable = new Runnable() {
-//            @Override
-//            public void run() {
-//                /* do what you need to do */
-//                myAudioRecorder.start();
-//                System.out.println("audio start");
-//                /* and here comes the "trick" */
-//                handler.postDelayed(this, 100);
-//                myAudioRecorder.stop();
-//                System.out.println("audio stop");
-//
-//            }
-//        };
-
-
-        //        https://stackoverflow.com/questions/36971839/tarsosdsp-clap-detection
+//        https://stackoverflow.com/questions/36971839/tarsosdsp-clap-detection
 //        mDispatcher = AudioDispatcherFactory.fromDefaultMicrophone(22050,1024,0);
 //
 //        double threshold = 8;
@@ -122,116 +283,3 @@ public class Gyroscope extends Activity implements SensorEventListener, View.OnC
 //
 //        mDispatcher.addAudioProcessor(mPercussionDetector);
 //        new Thread(mDispatcher,"Audio Dispatcher").start();
-
-
-
-//https://0110.be/tags/TarsosDSP
-//        String OutputString = "";
-//        txtOutput.setText(OutputString);
-
-        dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(22050,1024,0);
-
-        pdh = new PitchDetectionHandler() {
-            @Override
-            public void handlePitch(PitchDetectionResult result, AudioEvent e) {
-                final float pitchInHz = result.getPitch();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        txtOutput.setText("" + pitchInHz);
-                        txtGyroX.setText("Pitch in Hz:"+ Float.toString(pitchInHz));
-
-//                        if (pitchInHz<100 && pitchInHz>30){
-////                            txtOutput.setText("Clap");
-//
-//                        }
-                    }
-                });
-            }
-        };
-        p = new PitchProcessor(PitchProcessor.PitchEstimationAlgorithm.FFT_YIN, 22050, 1024, pdh);
-        dispatcher.addAudioProcessor(p);
-        new Thread(dispatcher,"Audio Dispatcher").start();
-
-    }
-
-    //Back-Button
-    @Override
-    public void onClick(View v) {
-        Intent intent = new Intent(this, Start.class);
-        startActivity(intent);
-        this.finish();
-    }
-
-    //http://www.41post.com/3745/programming/android-acessing-the-gyroscope-sensor-for-simple-applications
-    //when this Activity starts
-    @Override
-    protected void onResume()
-    {
-        super.onResume();
-        /*register the sensor listener to listen to the gyroscope sensor, use the
-        callbacks defined in this class, and gather the sensor information as quick
-        as possible*/
-        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_FASTEST);
-    }
-
-    //When this Activity isn't visible anymore
-    @Override
-    protected void onStop()
-    {
-        //unregister the sensor listener
-        mSensorManager.unregisterListener(this);
-        super.onStop();
-//        sound.stop();
-//        sound.release();
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor arg0, int arg1)
-    {
-        //Do nothing.
-    }
-
-    //Prints the gyroscope values
-    @Override
-    public void onSensorChanged(SensorEvent event)
-    {
-        //if sensor is unreliable, return void
-        if (event.accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE)
-        {
-            return;
-        }
-
-        //else it will output the Roll, Pitch and Yawn values
-//        gyroX += event.values[0];
-//        txtGyroX.setText("Orientation X:"+ Float.toString(gyroX));
-//        gyroY += event.values[1];
-//        txtGyroY.setText("Orientation Y:"+ Float.toString(gyroY));
-//        gyroZ += event.values[2];
-//        txtGyroZ.setText("Orientation Z:"+ Float.toString(gyroZ));
-
-//        String OutputString = "";
-//        switch (Float.toString(wuerfel)){
-//            case (Float.toString(0-100)):  XString = "oben";
-//                        break;
-//            case 101-200: XString = "unten";
-//
-//        }
-//        if (gyroX>=-300 && gyroX<=300 && gyroY>=-300 && gyroY<=300){
-//            OutputString = "oben";
-//        } else if (gyroX>=300 && gyroX<=900 && gyroZ>=-300 && gyroZ<=300){
-//            OutputString = "vorne";
-//        } else if (gyroX>=900 && gyroX<=1500 && gyroY>=-300 && gyroZ<=300) {
-//            OutputString = "unten";
-//        } else if (gyroX>=-900 && gyroX<=-300 && gyroZ>=-300 && gyroZ<=300) {
-//            OutputString = "hinten";
-//        } else if (gyroY>=300 && gyroY<=900 && gyroZ>=-300 && gyroZ<=300) {
-//            OutputString = "rechts";
-//        } else if (gyroY>=-900 && gyroY<=-300 && gyroZ>=-300 && gyroZ<=300) {
-//            OutputString = "links";
-//        }
-//        txtOutput.setText(OutputString);
-    }
-
-
-}

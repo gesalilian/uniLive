@@ -10,6 +10,10 @@ Vor dem Starten: (http://www.programmierenlernenhq.de/tutorial-android-app-insta
     damit die Frequenzanzeige funktioniert und die App nicht abstürzt
 
 
+In der Gyroscope.java liegt der Beispielcode
+In der Acceleration.java liegt der Code, den die Schüler ergänzen sollen
+-> beide Klassen greifen auf die gleiche Activity zu
+
 Quellen:
 - Kameralicht: https://stackoverflow.com/questions/6068803/how-to-turn-on-front-flash-light-programmatically-in-android
 - Vibration: https://stackoverflow.com/questions/13950338/how-to-make-an-android-device-vibrate
