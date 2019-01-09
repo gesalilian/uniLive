@@ -6,13 +6,17 @@ Vor dem Starten: (http://www.programmierenlernenhq.de/tutorial-android-app-insta
     - In den Entwickleroptionen "USB-Debugging" und "wach bleiben" aktivieren
 - USB-Treiber müssen nicht extra installiert werden, da sie im Android Studio schon enthalten sind (https://developer.android.com/studio/run/win-usb)?
 - Einstellungen im Handy ändern:
-    - Einstellungen -> Apps & Benachrichtigungen -> App-Berechtigungen -> Mikrofon und Kamera für die eigene Android App aktivieren,
+    - Einstellungen -> Apps & Benachrichtigungen -> App-Berechtigungen -> Mikrofon, Speicher und Kamera für die eigene Android App aktivieren,
     damit die Frequenzanzeige funktioniert und die App nicht abstürzt
 
+- um die externe Bibliothek für die Frequenzanzeige zu importieren:
+    -> im Android Studio oben links auf Android-> Project -> app -> libs klicken, rechtsklick auf die Jar-Datei -> Add as library -> OK
+    (evtl. Build -> Rebuild project klicken, um das Projekt zu erneuern)
 
-In der Gyroscope.java liegt der Beispielcode
-In der Acceleration.java liegt der Code, den die Schüler ergänzen sollen
--> beide Klassen greifen auf die gleiche Activity zu
+Anmerkungen:
+- In der Gyroscope.java liegt der Beispielcode
+- In der Acceleration.java liegt der Code, den die Schüler ergänzen sollen
+
 
 Quellen:
 - Kameralicht: https://stackoverflow.com/questions/6068803/how-to-turn-on-front-flash-light-programmatically-in-android
@@ -20,3 +24,5 @@ Quellen:
 - Sound: https://abhiandroid.com/androidstudio/add-audio-android-studio.html
 - Frequenzanzeige: https://0110.be/tags/TarsosDSP
 - Klatschen erkennen: https://stackoverflow.com/questions/36971839/tarsosdsp-clap-detection
+
+TODO: 1. Bisher kann die Frequenz nur angezeigt werden, solange man im "Beispiel" bleibt. Wenn man zurück ins Hauptmenü kommt und erneut auf "Beispiel" klickt, ist die Frequenzanzeige verschwunden

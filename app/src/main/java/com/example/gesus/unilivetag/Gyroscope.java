@@ -37,12 +37,13 @@ import be.tarsos.dsp.pitch.PitchProcessor;
 public class Gyroscope extends Activity implements SensorEventListener, View.OnClickListener{
 
     Button btnBack;
-    TextView txtAccX, txtAccY, txtAccZ, txtOutput;
+    TextView txtGyroX, txtGyroY, txtGyroZ, txtOutput;
     private SensorManager mSensorManager;
     private Sensor mSensor;
     float accX = 0;
     float accY = 0;
     float accZ = 0;
+    float frequenz = 0;
     Camera.Parameters p;
     MediaPlayer sound;
     AudioDispatcher dispatcher;
@@ -53,17 +54,18 @@ public class Gyroscope extends Activity implements SensorEventListener, View.OnC
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_acceleration);
+        setContentView(R.layout.activity_gyroscope);
 
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
         btnBack = (Button) findViewById(R.id.btnBack);
         btnBack.setOnClickListener(this);
-        txtAccX = (TextView) findViewById(R.id.txtAccX);
-        txtAccY = (TextView) findViewById(R.id.txtAccY);
-        txtAccZ = (TextView) findViewById(R.id.txtAccZ);
+        txtGyroX = (TextView) findViewById(R.id.txtGyroX);
+        txtGyroY = (TextView) findViewById(R.id.txtGyroY);
+        txtGyroZ = (TextView) findViewById(R.id.txtGyroZ);
         txtOutput = (TextView) findViewById(R.id.txtOutput);
+        frequence();
     }
 
 
@@ -83,7 +85,6 @@ public class Gyroscope extends Activity implements SensorEventListener, View.OnC
         String flashLightOn = "flashLightOn";
         String soundOff = "soundOff";
         String soundOn = "soundOn";
-        frequence();
 
         //Folgende Werte geben an in welche Richtung das Display zeigt (mithilfe der ermittelten Werte des Beschleunigungssensors
         if (accZ>=9 && accZ<=11){
@@ -91,6 +92,9 @@ public class Gyroscope extends Activity implements SensorEventListener, View.OnC
             OutputString = "oben";
             sound(soundOff);
             flashLight(flashLightOff);
+            if (frequenz<500 && frequenz>300){
+                v.vibrate(100);
+            }
 
         } else if (accY>=9 && accY<=11){
             v.cancel();
@@ -128,7 +132,6 @@ public class Gyroscope extends Activity implements SensorEventListener, View.OnC
             v.cancel();
             sound(soundOff);
             flashLight(flashLightOff);
-            frequence();
         }
         txtOutput.setText(OutputString);
     }
@@ -137,24 +140,20 @@ public class Gyroscope extends Activity implements SensorEventListener, View.OnC
 
     //Schaltet den Sound an und aus
     public void sound (String s){
-        txtAccX.setText("Sound: " + s);
-        sound= MediaPlayer.create(Gyroscope.this,R.raw.tap);
+        txtGyroX.setText("Sound: " + s);
         if (s == "soundOn"){
-            sound.start();
-            sound.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mp) {
-                    mp.reset();
-                    mp.release();
-                }
-            });
-        }else{
-            if(sound!=null) {
-                if(sound.isPlaying())
+            sound= MediaPlayer.create(Gyroscope.this,R.raw.tap);
+            try {
+                if (sound.isPlaying()) {
                     sound.stop();
-                sound.reset();
-                sound.release();
-                sound=null;
+                    sound.release();
+                    sound= MediaPlayer.create(Gyroscope.this,R.raw.tap);
+                }
+                sound.start();
+            } catch (Exception e) {
+                Toast.makeText(getBaseContext(), "Exception Sound()",
+                        Toast.LENGTH_SHORT).show();
+                e.printStackTrace();
             }
         }
     }
@@ -162,7 +161,7 @@ public class Gyroscope extends Activity implements SensorEventListener, View.OnC
     //Schaltet das Kameralicht an und aus
     //https://stackoverflow.com/questions/6068803/how-to-turn-on-front-flash-light-programmatically-in-android
     public void flashLight(String s) {
-        txtAccY.setText("Licht: "+ s);
+        txtGyroY.setText("Licht: "+ s);
         if (s == "flashLightOn") {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 CameraManager camManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
@@ -195,7 +194,6 @@ public class Gyroscope extends Activity implements SensorEventListener, View.OnC
     //Zeigt die Frquenz der Töne an, die das Handy wahrnimmt
     public void frequence(){
         dispatcher = AudioDispatcherFactory.fromDefaultMicrophone(22050, 1024, 0);
-
         pdh = new PitchDetectionHandler() {
             @Override
             public void handlePitch(PitchDetectionResult result, AudioEvent e) {
@@ -203,7 +201,8 @@ public class Gyroscope extends Activity implements SensorEventListener, View.OnC
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        txtAccZ.setText("Frequenz in Hz: " + Float.toString(pitchInHz));
+                        frequenz = pitchInHz;
+                        txtGyroZ.setText("Frequenz in Hz: " + Float.toString(pitchInHz));
                     }
                 });
             }
